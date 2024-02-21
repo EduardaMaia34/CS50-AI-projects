@@ -142,78 +142,38 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     probability = float(1)
 
     for person in people:
+        genes = (
+            2 if person in two_genes else
+            1 if person in one_gene else
+            0
+        )
 
-        if person in two_genes:
-            genes = 2
-        elif person in one_gene:
-            genes = 1
-        else:
-            genes = 0
-
-
-        if person in have_trait:
-            trait = True
-        else:
-            trait = False
-
-
-        mother = people[person]['mother']
-        father = people[person]['father']
-
+        trait = person in have_trait
+        mother = people[person]["mother"]
+        father = people[person]["father"]
 
         if mother is None and father is None:
-            probability *= PROBS['gene'][genes]
+            probability *= PROBS["gene"][genes]
+
         else:
-            
-            mother_prob = inherit_prob(mother, one_gene, two_genes)
-            father_prob = inherit_prob(father, one_gene, two_genes)
+            passing = {mother: 0, father: 0}
 
-            if genes == 2:
-              probability *= mother_prob * father_prob
-            elif genes == 1:
-              probability *= (1 - mother_prob) * father_prob + (1 - father_prob) * mother_prob
-            else:
-              probability *= (1 - mother_prob) * (1 - father_prob)
-            """inherit_prob = {'mother':0, 'father':0}
+            for parent in passing:
+                passing[parent] = (
+                    1 - PROBS["mutation"] if parent in two_genes else
+                    0.5 if parent in one_gene else
+                    PROBS["mutation"]
+                )
 
-            for parent in inherit_prob:
-                if parent in two_genes:
-                    inherit_prob[parent] = 1 - PROBS['mutation']
-                elif parent in one_gene:
-                    inherit_prob[parent] = 0.5
-                    #selecting my bad gene (1) or selecting the good gene and mutating it (0.5)
-                else:
-                    inherit_prob[parent] = PROBS['mutation']
+            probability *= (
+                passing[mother] * passing[father] if genes == 2 else
+                passing[mother] * (1 - passing[father]) + (1 - passing[mother]) * passing[father] if genes == 1 else
+                (1 - passing[mother]) * (1 - passing[father])
+            )
+        probability *= PROBS["trait"][genes][trait]
 
-        if genes == 2:
-            probability = inherit_prob['mother'] * inherit_prob['father']
-        elif genes == 1:
-            #bad gene from mom and good from dad or bad gene from dad and good from mom
-            #(1 - inherit) -> good gene
-            probability = (1 - inherit_prob['mother']) * inherit_prob['father'] + (1 - inherit_prob['father']) * inherit_prob['mother']
-        else:
-            (1 - inherit_prob["mother"]) * (1 - inherit_prob["father"])"""
+    return probability
 
-    return probability*PROBS["trait"][genes][trait]
-            
-def inherit_prob(parent_name, one_gene, two_genes):
-    """
-    joint_probability helper function
-
-    Returns the probability of a parent giving a copy of the mutated gene to their child.
-
-    Takes:
-    - parent_name - the name of the parent
-    - one_gene - set of people having 1 copy of the gene
-    - two_genes - set of people having two copies of the gene.
-    """
-
-    if parent_name in two_genes:
-        return 1 - PROBS['mutation']
-    elif parent_name in one_gene:
-        return 0.5
-    else:
-        return PROBS['mutation']    
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
     """
@@ -223,20 +183,16 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     the person is in `have_gene` and `have_trait`, respectively.
     """
     for person in probabilities:
-        if person in one_gene:
-            num_gene = 1
-        elif person in two_genes:
-            num_gene = 2
-        else:
-            num_gene = 0
+        genes = (
+            2 if person in two_genes else
+            1 if person in one_gene else
+            0
+        )
 
-        if person in have_trait:
-            trait = True
-        else:
-            trait = False
-        
-        probabilities[person]["gene"][num_gene] = probabilities[person]["gene"][num_gene] + p
-        probabilities[person]["trait"][trait] = probabilities[person]["trait"][trait] + p
+        trait = person in have_trait
+
+        probabilities[person]["gene"][genes] += p
+        probabilities[person]["trait"][trait] += p
 
 
 def normalize(probabilities):
@@ -244,20 +200,6 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    #make everything proportional in a scale where the total value sums up to 1
-    """ind_sum = 0
-    trait_sum = 0
-
-    for person in probabilities:
-        
-        for values in probabilities[person]['gene'].values():
-            ind_sum += values
-        for upd_values in probabilities[person]['gene']:
-            probabilities[person]['gene'][upd_values] /= ind_sum
-        
-        trait_sum = probabilities[person]['trait'][True] + probabilities[person]['trait'][False]
-        probabilities[person]['trait'][True] /= trait_sum
-        probabilities[person]['trait'][False] /= trait_sum"""
     for person in probabilities:
         gene_sum = 0
         for i in range(3):
@@ -269,9 +211,6 @@ def normalize(probabilities):
         trait_sum = probabilities[person]["trait"][True] + probabilities[person]["trait"][False]
         probabilities[person]["trait"][True]  /= trait_sum
         probabilities[person]["trait"][False] /= trait_sum
-        
-
-            
 
 
 if __name__ == "__main__":
