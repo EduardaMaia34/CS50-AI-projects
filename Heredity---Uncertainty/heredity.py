@@ -159,22 +159,12 @@ def joint_probability(people, one_gene, two_genes, have_trait):
 
         mother = people[person]['mother']
         father = people[person]['father']
+        inherit_prob = {mother:0, father:0}
 
 
         if mother is None and father is None:
             probability *= PROBS['gene'][genes]
         else:
-            
-            mother_prob = inherit_prob(mother, one_gene, two_genes)
-            father_prob = inherit_prob(father, one_gene, two_genes)
-
-            if genes == 2:
-              probability *= mother_prob * father_prob
-            elif genes == 1:
-              probability *= (1 - mother_prob) * father_prob + (1 - father_prob) * mother_prob
-            else:
-              probability *= (1 - mother_prob) * (1 - father_prob)
-            """inherit_prob = {'mother':0, 'father':0}
 
             for parent in inherit_prob:
                 if parent in two_genes:
@@ -186,34 +176,17 @@ def joint_probability(people, one_gene, two_genes, have_trait):
                     inherit_prob[parent] = PROBS['mutation']
 
         if genes == 2:
-            probability = inherit_prob['mother'] * inherit_prob['father']
+            probability *= inherit_prob[mother] * inherit_prob[father]
         elif genes == 1:
             #bad gene from mom and good from dad or bad gene from dad and good from mom
             #(1 - inherit) -> good gene
-            probability = (1 - inherit_prob['mother']) * inherit_prob['father'] + (1 - inherit_prob['father']) * inherit_prob['mother']
+            probability *= (1 - inherit_prob[mother]) * inherit_prob[father] + (1 - inherit_prob[father]) * inherit_prob[mother]
         else:
-            (1 - inherit_prob["mother"]) * (1 - inherit_prob["father"])"""
+            probability *= (1 - inherit_prob[mother]) * (1 - inherit_prob[father])
 
-    return probability*PROBS["trait"][genes][trait]
-            
-def inherit_prob(parent_name, one_gene, two_genes):
-    """
-    joint_probability helper function
-
-    Returns the probability of a parent giving a copy of the mutated gene to their child.
-
-    Takes:
-    - parent_name - the name of the parent
-    - one_gene - set of people having 1 copy of the gene
-    - two_genes - set of people having two copies of the gene.
-    """
-
-    if parent_name in two_genes:
-        return 1 - PROBS['mutation']
-    elif parent_name in one_gene:
-        return 0.5
-    else:
-        return PROBS['mutation']    
+    probability *= PROBS["trait"][genes][trait]
+    return probability
+ 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
     """
