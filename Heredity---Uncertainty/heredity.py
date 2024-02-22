@@ -139,6 +139,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
+    
     probability = float(1)
 
     for person in people:
@@ -159,12 +160,11 @@ def joint_probability(people, one_gene, two_genes, have_trait):
 
         mother = people[person]['mother']
         father = people[person]['father']
-        inherit_prob = {mother:0, father:0}
-
 
         if mother is None and father is None:
             probability *= PROBS['gene'][genes]
         else:
+            inherit_prob = {mother: 0, father: 0}
 
             for parent in inherit_prob:
                 if parent in two_genes:
@@ -175,16 +175,17 @@ def joint_probability(people, one_gene, two_genes, have_trait):
                 else:
                     inherit_prob[parent] = PROBS['mutation']
 
-        if genes == 2:
-            probability *= inherit_prob[mother] * inherit_prob[father]
-        elif genes == 1:
-            #bad gene from mom and good from dad or bad gene from dad and good from mom
-            #(1 - inherit) -> good gene
-            probability *= (1 - inherit_prob[mother]) * inherit_prob[father] + (1 - inherit_prob[father]) * inherit_prob[mother]
-        else:
-            probability *= (1 - inherit_prob[mother]) * (1 - inherit_prob[father])
+            if genes == 2:
+                probability *= inherit_prob[mother] * inherit_prob[father]
+            elif genes == 1:
+                #bad gene from mom and good from dad or bad gene from dad and good from mom
+                #(1 - inherit) -> good gene
+                probability *= (1 - inherit_prob[mother]) * inherit_prob[father] + (1 - inherit_prob[father]) * inherit_prob[mother]
+            else:
+                probability *= (1 - inherit_prob[mother]) * (1 - inherit_prob[father])
 
-    probability *= PROBS["trait"][genes][trait]
+        probability *= PROBS["trait"][genes][trait]
+        
     return probability
  
 
