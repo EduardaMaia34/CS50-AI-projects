@@ -98,12 +98,16 @@ class CrosswordCreator():
         (Remove any values that are inconsistent with a variable's unary
          constraints; in this case, the length of the word.)
         """
+        
         for var in self.domains:
+            removeWords = []
             for word in self.domains[var]:
-                if len(word) != len(var):
-                    self.domains[var].remove[word]
+                if len(word) != var.length:
+                    removeWords.append(word)
 
-        return self.domains
+            for w in removeWords:
+                self.domains[var].remove(w)
+
 
     def revise(self, x, y):
         """
@@ -115,7 +119,7 @@ class CrosswordCreator():
         False if no revision was made.
         """
         if self.crossword.overlaps[x,y] != None:
-            self.domains[x].remove[y]
+            self.domains[x].remove(y)
             #y should be left unmodified
             return True
         else:
@@ -142,9 +146,9 @@ class CrosswordCreator():
             var_x, var_y = arcs.pop()
 
             if self.revise(var_x, var_y) == True: #changes where made
-                if len(self.domain[var_x]) == 0:
+                if len(self.domains[var_x]) == 0:
                     return False
-                for n in self.crossword.neighbours[var_x] - {var_y}:
+                for n in self.crossword.neighbors[var_x] - {var_y}:
                     arcs.append((n, var_x))
 
         return True
@@ -155,14 +159,29 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
-
+        for var in self.domains:
+            if var not in assignment:
+                return False
+        return True
+            
     def consistent(self, assignment):
         """
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+        for var in assignment:
+            if var.length == len(assignment[var]):
+                neighbors = self.crossword.neighbors(var)
+                for n in neighbors:
+                    i,j = self.crossword.overlaps[var, n]
+                    if var[i] == n[j]:
+                        continue
+                    else:
+                        return False
+            else:
+                return False
+            
+        return True
 
     def order_domain_values(self, var, assignment):
         """
@@ -171,7 +190,26 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        #gets a variable and see how many other possible choices it rules out
+
+        num_rullout = {}
+        for v in self.domains[var]:
+            num_rullout[v] = 0
+
+        for val in self.domains[var]:
+
+            for n in self.crossword.neighbors(var):
+                for other_val in self.domains[n]:
+
+                    if self.crossword.overlaps[val, other_val]:
+                        #overlap happens
+                        i, j = self.crossword.overlaps[val, other_val]
+
+                        if val[i] != other_val[j]:
+                            #rules out some options
+                            num_rullout[val] += 1
+
+        return sorted([x for x in num_rullout], key = lambda x: num_rullout[x])
 
     def select_unassigned_variable(self, assignment):
         """
@@ -181,7 +219,14 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        unassigned = set(self.domains.keys()) - set(assignment.keys())
+        result = []
+
+        for var in unassigned:
+            result.append(var)
+        result.sort(key = lambda x: (len(self.domains[x]), -len(self.crossword.neighbors(x))))
+        
+        return result[0] #less possible values
 
     def backtrack(self, assignment):
         """
@@ -192,7 +237,25 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        if self.assignment_complete(assignment):
+            return assignment
+        
+        var = self.select_unassigned_variable(assignment) #getting a variable that wasn't assigned yet and that has the less possible values
+
+        for value in self.order_domain_values(var, assignment):
+            #getting the values that rule out more options
+            assignment[var] = value
+            if self.consistent(assignment): #if there are no conflicts with the number of characters or overlaps
+                result = self.backtrack(assignment)
+
+                if result is not None: #if it worked
+                    return result
+                
+            assignment.pop(var) #this value doesn't work so take it out of the assigment dict
+
+        return None #didnt work
+        
+        
 
 
 def main():
