@@ -118,13 +118,30 @@ class CrosswordCreator():
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
-        if self.crossword.overlaps[x,y] != None:
-            self.domains[x].remove(y)
-            #y should be left unmodified
-            return True
-        else:
-            return False
+    
+        revised = False
+        overlap = self.crossword.overlaps[x, y]
 
+        if overlap is None:
+            return False
+        else:
+            i = overlap[0]
+            j = overlap[1]
+            removeWords = []
+
+            for wordX in self.domains[x]: 
+                for wordY in self.domains[y]:
+                    if wordX[i] == wordY[j]:
+                        break
+                else: #se nao tiver break -> X e Y posição é diferente
+                    removeWords.append(wordX)
+                    #self.domains[x].remove(wordX)
+                    revised = True
+
+            for word in removeWords:
+                self.domains[x].remove(word)    
+
+            return revised 
 
     def ac3(self, arcs=None):
         """
@@ -148,7 +165,10 @@ class CrosswordCreator():
             if self.revise(var_x, var_y) == True: #changes where made
                 if len(self.domains[var_x]) == 0:
                     return False
-                for n in self.crossword.neighbors[var_x] - {var_y}:
+                for n in self.crossword.neighbors(var_x):
+                    if n == var_y:
+                        continue
+                    
                     arcs.append((n, var_x))
 
         return True
@@ -169,19 +189,19 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        for var in assignment:
-            if var.length == len(assignment[var]):
-                neighbors = self.crossword.neighbors(var)
-                for n in neighbors:
-                    i,j = self.crossword.overlaps[var, n]
-                    if var[i] == n[j]:
-                        continue
-                    else:
-                        return False
-            else:
+        for key, val in assignment.items():
+            if key.length != len(val): # se variavel e palavra tiver numero de letras diferentes
                 return False
             
+            for n in self.crossword.neighbors(key):
+                overlap = self.crossword.overlaps[key, n]
+                if n in assignment:
+                    if assignment[n][overlap[1]] != val[overlap[0]]: 
+                        #se a letra do neighbor na posição do overlap for diferente que a letra da variavel nessa posição -> conflito
+                        return False
+                    
         return True
+            
 
     def order_domain_values(self, var, assignment):
         """
@@ -197,19 +217,15 @@ class CrosswordCreator():
             num_rullout[v] = 0
 
         for val in self.domains[var]:
+            if val in assignment:
+                continue
 
-            for n in self.crossword.neighbors(var):
-                for other_val in self.domains[n]:
+            else:
+                for n in self.crossword.neighbors(var):
+                    if val in self.domains[n]: #se variavel esta em domains dos seus proprios vizinhos
+                        num_rullout[val] += 1
 
-                    if self.crossword.overlaps[val, other_val]:
-                        #overlap happens
-                        i, j = self.crossword.overlaps[val, other_val]
-
-                        if val[i] != other_val[j]:
-                            #rules out some options
-                            num_rullout[val] += 1
-
-        return sorted([x for x in num_rullout], key = lambda x: num_rullout[x])
+        return sorted(num_rullout, key=lambda key: num_rullout[key])
 
     def select_unassigned_variable(self, assignment):
         """
