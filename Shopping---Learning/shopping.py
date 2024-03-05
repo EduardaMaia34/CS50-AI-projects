@@ -62,35 +62,39 @@ def load_data(filename):
     labels = []
     months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    with open(filename, "r") as file:
-        reader = csv.reader(file)
-        next(reader)
+    month_num = enumerate(months)
+    month = {k: v for v, k in month_num}
 
-        for row in reader:
-            if row[-1]==True:
-                labels.append(1)
-            else:
-                labels.append(0)
+    with open(filename, "r") as raw:
 
-            temp = []
-            temp.append(int(row[0]))
-            temp.append(float(row[1]))
-            temp.append(int(row[2]))
-            temp.append(float(row[3]))
-            temp.append(int(row[4]))
-            temp.append(float(row[5]))
-            temp.append(float(row[6]))
-            temp.append(float(row[7]))
-            temp.append(float(row[8]))
-            temp.append(float(row[9]))
-            temp.append(months.index(row[10]))
-            temp.append(int(row[11]))
-            temp.append(int(row[12]))
-            temp.append(int(row[13]))
-            temp.append(int(row[14]))
-            temp.append(1 if row[15] == "Returning_Visitor" else 0,)
-            temp.append(1 if row[16] == "TRUE" else 0)
-            evidence.append(temp)
+        # returns an OrderedDict object for iterating
+        reader = csv.DictReader(raw)
+        for each_row in reader:
+            
+            # initializing an empty list and
+            # append values to it after typecasting
+            row = []
+            row.append(int(each_row["Administrative"]))
+            row.append(float(each_row["Administrative_Duration"]))
+            row.append(int(each_row["Informational"]))
+            row.append(float(each_row["Informational_Duration"]))
+            row.append(int(each_row["ProductRelated"]))
+            row.append(float(each_row["ProductRelated_Duration"]))
+            row.append(float(each_row["BounceRates"]))
+            row.append(float(each_row["ExitRates"]))
+            row.append(float(each_row["PageValues"]))
+            row.append(float(each_row["SpecialDay"]))
+            row.append(int(month[each_row["Month"]]))
+            row.append(int(each_row["OperatingSystems"]))
+            row.append(int(each_row["Browser"]))
+            row.append(int(each_row["Region"]))
+            row.append(int(each_row["TrafficType"]))
+            row.append(int(each_row["VisitorType"] == 'Returning_Visitor'))
+            row.append(int(each_row["Weekend"] == 'TRUE'))
+            evidence.append(row)
+            
+            # append the corresponding label
+            labels.append(int(each_row["Revenue"] == 'TRUE'))
 
     return evidence, labels
 
