@@ -21,7 +21,7 @@ def main():
     # Train model and make predictions
     model = train_model(X_train, y_train)
     predictions = model.predict(X_test)
-    sensitivity, specificity = evaluate(y_test, predictions)
+    sensitivity, specificity = evaluate(y_test, predictions) #evaluate(output_test, predictions)
 
     # Print results
     print(f"Correct: {(y_test == predictions).sum()}")
@@ -60,40 +60,39 @@ def load_data(filename):
     """
     evidence = []
     labels = []
-    file = csv.reader(filename)
-    header = next(filename)
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    for row in file:
-        temp_ev = []
+    with open(filename, "r") as file:
+        reader = csv.reader(file)
+        next(reader)
 
-        for el in row[0,-2]:
-            if el is int or el is float:
-                temp_ev.append(el)
-            else: 
-                if el in months:
-                    temp_ev.append(months.index(el))
-                elif el == "Returning_Visitor":
-                    temp_ev.append(1)
-                elif el == "New_Visitor":
-                    temp_ev.append(0)
-                else:
-                    if el==True:
-                        temp_ev.append(1)
-                    else:
-                        temp_ev.append(0)
+        for row in reader:
+            if row[-1]==True:
+                labels.append(1)
+            else:
+                labels.append(0)
 
-        if row[-1]==True:
-            labels.append(1)
-        else:
-            labels.append(0)
-
-        evidence.append(temp_ev)
+            temp = []
+            temp.append(int(row[0]))
+            temp.append(float(row[1]))
+            temp.append(int(row[2]))
+            temp.append(float(row[3]))
+            temp.append(int(row[4]))
+            temp.append(float(row[5]))
+            temp.append(float(row[6]))
+            temp.append(float(row[7]))
+            temp.append(float(row[8]))
+            temp.append(float(row[9]))
+            temp.append(months.index(row[10]))
+            temp.append(int(row[11]))
+            temp.append(int(row[12]))
+            temp.append(int(row[13]))
+            temp.append(int(row[14]))
+            temp.append(1 if row[15] == "Returning_Visitor" else 0,)
+            temp.append(1 if row[16] == "TRUE" else 0)
+            evidence.append(temp)
 
     return evidence, labels
-
-
-
 
 def train_model(evidence, labels):
     """
@@ -119,7 +118,27 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    positive = 0
+    negative = 0
+    true_pos = 0
+    true_neg = 0
+
+    for index in range(len(labels)):
+        if labels[index] == 1:
+            positive += 1
+            if predictions[index] == 1:
+                true_pos += 1
+
+        else:
+            negative += 1
+            if predictions[index] == 0:
+                true_neg += 1
+
+    sensitivity = true_pos / positive
+    specificity = true_neg / negative
+
+    return sensitivity, specificity
+
 
 
 if __name__ == "__main__":
