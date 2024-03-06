@@ -114,11 +114,8 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        q_value = self.q[tuple(state), action]
-        if q_value == None:
-            return 0
-        else: 
-            return q_value
+        key = (tuple(state), action)
+        return self.q.get(key, 0)
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -190,8 +187,7 @@ class NimAI():
             q_value = self.get_q_value(state, action)
             q_values[action] = q_value
 
-        best_action = max(q_values, k=q_values.get) #getting higher value
-        return best_action
+        return max(q_values, key=q_values.get) #getting higher value
 
 
 def train(n):
