@@ -58,24 +58,39 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
+    '''images = []
+    labels = []
+
+    for category in range(NUM_CATEGORIES):
+        category_path = os.path.join(data_dir, str(category))
+
+        if os.path.isdir(category_path):
+            for file in os.listdir(category_path):
+                img_path = os.path.join(category_path, file)
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+                images.append(img)
+                labels.append(category)
+
+    return (images, labels)'''
+
     images = []
     labels = []
 
-    for folder in os.listdir(data_dir): #lista dos diretorios
-        path = os.path.join(data_dir, folder)
+    for category in os.listdir(data_dir):
+        cat_path = os.path.join(data_dir, category)
 
-        if os.path.isdir(path): #se esse diretorio existir
-            for img in os.listdir(path): #lista dos arquivos no path data_dir + directory
-                
-                if os.path.isdir(os.path.join(path, img)):  #se esse diretorio existir
+        if os.path.isdir(cat_path):
 
-                    img = cv2.imread(os.path.join(path, img))
-                    img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+            for file in os.listdir(cat_path):
+                img_path = os.path.join(cat_path, file)
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+                labels.append(category)
+                images.append(img)
 
-                    images.append(img)  
-                    labels.append(int(folder))  
+    return images, labels
 
-    return (img, labels)
 
 
 def get_model():
@@ -84,11 +99,17 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    model = tf.keras.model.Sequential([
+    model = tf.keras.models.Sequential([
 
-        tf.keras.layers.Conv2D(20, (3,3), activation='relu', input_shape=(IMG_WIDTH,IMG_HEIGHT, 3)), 
-        tf.keras.layers.MaxPooling2D(pool_size=(2,2)),
+       # Convolutional layer. Learn 32 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(
+            32, (3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
 
+        # Max-pooling layer, using 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+
+        # Flatten units
         tf.keras.layers.Flatten(),
 
         # Add a hidden layer with dropout
@@ -96,14 +117,14 @@ def get_model():
         tf.keras.layers.Dropout(0.5),
 
         # Add an output layer with output units for all 10 digits
-        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax") 
 
     ])
 
     model.compile(
-        optimizer="adam",
-        loss="binary_crossentropy",
-        metrics=["accuracy"]
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+        optimizer="adam"
     )
 
     return model
